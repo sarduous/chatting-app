@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>WhatsUp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1f005c, #5b0060, #870160, #ac255e, #ca485c, #e16b5c, #f39060, #ffb56b);
+            background-size: 200% 200%;
+            animation: gradientAnim 10s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        @keyframes gradientAnim {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1f005c, #5b0060, #870160, #ac255e, #ca485c, #e16b5c, #f39060, #ffb56b);
+            background-size: 200% 200%;
+            color: white;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        /* --- SEKME BUTONLARI İÇİN YENİ CSS --- */
+        .sekme-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sekme-btn.aktif-sekme {
+            background: white;
+            color: #870160;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .yeni-sohbet {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px 24px;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        .yeni-sohbet input {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        .yeni-sohbet input:focus {
+            border-color: #f857a6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(248, 87, 166, 0.15);
+        }
+
+        .grup-kur-btn {
+            padding: 12px;
+            border-radius: 20px;
+            border: none;
+            background: linear-gradient(135deg, #8e2de2, #f857a6);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(142, 45, 226, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .grup-kur-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .sohbet-listesi {
+            list-style: none;
+            padding: 20px 24px;
+            margin: 0;
+            overflow-y: auto;
+            flex: 1;
+            background: #f8f9fa;
+        }
+
+        .sohbet-listesi::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sohbet-listesi::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+
+        .sohbet-listesi li {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+
+        .sohbet-listesi li:hover {
+            background: #fdfdfd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+            margin-right: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 10px rgba(248, 87, 166, 0.3);
+        }
+
+        .avatar.group {
+            border-radius: 14px;
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            box-shadow: 0 4px 10px rgba(0, 114, 255, 0.3);
+        }
+
+        .user-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-info h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 350px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .checkbox-container {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .checkbox-container label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .modal-btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn-row button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-kaydet {
+            background: #4cd137;
+            color: white;
+        }
+
+        .btn-kaydet:hover {
+            background: #44bd32;
+        }
+
+        .btn-iptal {
+            background: #f1f2f6;
+            color: #333;
+        }
+
+        .btn-iptal:hover {
+            background: #dfe4ea;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div
+                style="display: flex; gap: 10px; background: rgba(255,255,255,0.15); padding: 5px; border-radius: 25px;">
+                <button id="btn-sohbetler" class="sekme-btn aktif-sekme"
+                    onclick="sekmeDegistir('sohbetler')">Sohbetler</button>
+                <button id="btn-kisiler" class="sekme-btn" onclick="sekmeDegistir('kisiler')">Kişiler</button>
+            </div>
+            <button class="logout-btn" onclick="cikisYap()">Çıkış Yap</button>
+        </div>
+
+        <div class="yeni-sohbet">
+            <!-- oninput her harfe basıldığında filtrelemeyi güncelliyor -->
+            <input type="text" id="arama-kutusu" placeholder="Kişi veya grup ara..." oninput="listeyiFiltrele()">
+            <button id="btn-yeni-grup" class="grup-kur-btn" onclick="modalAc()">Yeni Grup Kur</button>
+        </div>
+        <ul class="sohbet-listesi" id="liste">
+        </ul>
+    </div>
+
+    <!-- grup kurma -->
+    <div id="grupModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; color: #333;">Yeni Grup Kur</h3>
+            <input type="text" id="yeni-grup-adi" placeholder="Grup Adı: "
+                style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; outline: none;">
+
+            <h4 style="margin-bottom: 10px; font-size: 0.9rem; color: #666;">Kişileri Seç:</h4>
+            <div class="checkbox-container" id="modal-kisi-listesi">
+            </div>
+
+            <div class="modal-btn-row">
+                <button class="btn-kaydet" onclick="grubuKaydet()">Grubu Kur</button>
+                <button class="btn-iptal" onclick="modalKapat()">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const myGlobalName = sessionStorage.getItem('chatKullaniciAdi');
+        let tumOgeler = [];
+        let sadeceKullanicilar = [];//sadece modal içindeki
+
+
+        // hangi sekmede olduğumuz
+        let guncelSekme = 'sohbetler';
+        if (!myGlobalName) {
+            window.location.href = '/login.html';
+        }
+
+        function cikisYap() {
+            sessionStorage.clear();
+            window.location.href = '/login.html';
+        }
+
+        function sekmeDegistir(hedefSekme) {
+            document.getElementById('btn-sohbetler').classList.remove('aktif-sekme');
+            document.getElementById('btn-kisiler').classList.remove('aktif-sekme');
+            document.getElementById('btn-' + hedefSekme).classList.add('aktif-sekme');
+
+            const yeniGrupBtn = document.getElementById('btn-yeni-grup');
+            if (hedefSekme === 'kisiler') {
+                yeniGrupBtn.style.display = 'none';
+            } else {
+                yeniGrupBtn.style.display = 'block';
+            }
+
+            guncelSekme = hedefSekme;
+
+            listeyiFiltrele();
+        }
+
+        // kişiler ve gruplar aynı anda çekiliyor
+        function verileriGetir() {
+            Promise.all([
+                fetch('/api/kullanicilar').then(res => res.json()),
+                fetch('/api/gruplar/benim/' + myGlobalName).then(res => res.json()),
+                fetch('/api/kullanicilar/' + myGlobalName + '/ikili-sohbetler').then(res => res.json())
+            ])
+                .then(([kullanicilar, gruplar, ikiliSohbetler]) => {
+                    // kendi ismimizi çıkarma
+                    sadeceKullanicilar = kullanicilar.filter(isim => isim !== myGlobalName);
+
+                    // Gruplar
+                    const formatliGruplar = gruplar.map(g => ({ tip: 'grup', id: g.id, isim: g.groupName }));
+                    // Kişiler
+                    const formatliKisiler = sadeceKullanicilar.map(k => ({ tip: 'kisi', isim: k }));
+                    // İkili Sohbetler
+                    const formatliIkili = ikiliSohbetler.map(isim => ({ tip: 'ikili', isim: isim }));
+                    // önce gruplar sonra kişiler(hepsini tek bir listede birleştiriyoruz)
+                    tumOgeler = [...formatliGruplar, ...formatliIkili, ...formatliKisiler];
+                    listeyiFiltrele();
+                })
+                .catch(err => console.log("Veriler çekilemedi:", err));
+        }
+        verileriGetir();
+
+        function listeyiFiltrele() {
+            const arananKelime = document.getElementById('arama-kutusu').value.trim().toLowerCase();
+
+            let sekmeyeGoreFiltre = tumOgeler.filter(oge => {
+                if (guncelSekme === 'sohbetler') {
+                    return oge.tip === 'grup' || oge.tip === 'ikili';
+                } else {
+                    return oge.tip === 'kisi';
+                }
+            });
+
+            const tamFiltrelenmisListe = sekmeyeGoreFiltre.filter(oge =>
+                oge.isim.toLowerCase().includes(arananKelime)
+            );
+
+            listeyiEkranaCiz(tamFiltrelenmisListe);
+        }
+
+        function listeyiEkranaCiz(gosterilecekListe) {
+            const listeDOM = document.getElementById('liste');
+            listeDOM.innerHTML = '';
+
+            if (gosterilecekListe.length === 0) {
+                listeDOM.innerHTML = '<li style="justify-content:center; color:#8696a0;">Kayıt bulunamadı</li>';
+                return;
+            }
+
+            gosterilecekListe.forEach(oge => {
+                const li = document.createElement('li');
+                const basHarf = oge.isim.charAt(0).toUpperCase();
+
+                if (oge.tip === 'kisi' || oge.tip === 'ikili') {
+                    li.onclick = () => kisiyeGit(oge.isim);
+                    li.innerHTML = `
+                        <div class="avatar">${basHarf}</div>
+                        <div class="user-info">
+                            <h3>${oge.isim}</h3>
+                        </div>
+                    `;
+                } else if (oge.tip === 'grup') {
+                    li.onclick = () => grubaGit(oge.id, oge.isim);//kişi yerine gruba tıkladığımda çalışan yer
+                    li.innerHTML = `
+                        <div class="avatar group">${basHarf}</div>
+                        <div class="user-info">
+                            <h3>${oge.isim} <span class="badge">Grup</span></h3>
+                        </div>
+                    `;
+                }
+                listeDOM.appendChild(li);
+            });
+        }
+
+        // ikili oda oluşturma
+        function kisiyeGit(karsiTaraf) {
+            const isimler = [myGlobalName, karsiTaraf].sort();
+            const roomId = isimler[0] + "_" + isimler[1];
+            sessionStorage.setItem('chatOdasi', roomId);
+            sessionStorage.setItem('konusulanKisi', karsiTaraf);
+            window.location.href = '/index.html';
+        }
+
+        // grup oluşturma, kişi yerine gruba bastığında çalışan yer 
+        function grubaGit(grupId, grupAdi) {
+            // sistemin bunun grup olduğunu anlaması için Group_ ekle
+            const roomId = "GROUP_" + grupId;
+            sessionStorage.setItem('chatOdasi', roomId);
+            sessionStorage.setItem('konusulanKisi', grupAdi);
+            window.location.href = '/index.html';
+        }
+
+        function modalAc() {
+            const container = document.getElementById('modal-kisi-listesi');
+            container.innerHTML = '';
+
+            if (sadeceKullanicilar.length === 0) {
+                container.innerHTML = '<span style="color:#888; font-size:0.9rem;">Sistemde eklenecek kullanıcı yok.</span>';
+            } else {
+                sadeceKullanicilar.forEach(kisi => {
+                    container.innerHTML += `<label><input type="checkbox" value="${kisi}"> ${kisi}</label>`;
+                });
+            }
+            document.getElementById('grupModal').style.display = 'flex';
+        }
+
+        function modalKapat() {
+            document.getElementById('grupModal').style.display = 'none';
+            document.getElementById('yeni-grup-adi').value = '';
+        }
+
+        function grubuKaydet() {
+            const grupAdi = document.getElementById('yeni-grup-adi').value.trim();
+            // tik atılmış olanların sadece isimlerini alıp, temiz bir array olarak ver
+            const secilenler = Array.from(document.querySelectorAll('#modal-kisi-listesi input:checked')).map(cb => cb.value);
+
+            if (!grupAdi) { alert("Lütfen grup adı girin!"); return; }
+            if (secilenler.length === 0) { alert("Lütfen en az 1 kişi seçin!"); return; }
+
+            // gruba kendimizi de ekleme
+            secilenler.push(myGlobalName);
+
+            // Verileri Backend API'sine (RequestParam) uygun hale getiriyoruz
+            const formData = new URLSearchParams();
+            formData.append('grupAdi', grupAdi);
+            secilenler.forEach(uye => formData.append('uyeler', uye));
+
+            fetch('/api/gruplar/olustur', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            })
+                .then(res => res.json())
+                .then(yeniGrup => {
+                    alert("Grup başarıyla oluşturuldu!");
+                    modalKapat();
+                    verileriGetir();
+                })
+                .catch(err => {
+                    console.error("Hata:", err);
+                    alert("Grup kurulurken bir hata oluştu.");
+                });
+        }
+    </script>
+</body>
+
+</html>

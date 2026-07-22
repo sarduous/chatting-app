@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Whatsup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1f005c, #5b0060, #870160, #ac255e, #ca485c, #e16b5c, #f39060, #ffb56b);
+            background-size: 200% 200%;
+            animation: gradientAnim 10s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        @keyframes gradientAnim {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        input {
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-box">
+        <h2>Whatsup'a Hoş Geldiniz</h2>
+        <input type="text" id="username-input" placeholder="Kullanıcı Adınız" onkeypress="handleEnter(event)">
+        <input type="password" id="passwordInput" placeholder="Şifreniz" onkeypress="handleEnter(event)">
+        <br>
+        <button onclick="login()">Giriş Yap</button>
+    </div>
+
+    <script>
+        function login() {
+            const username = document.getElementById('username-input').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+
+            if (username === "") {
+                alert("Lütfen isim alanını doldurunuz!");
+                return;
+            }
+            if (password === "") {
+                alert("Lütfen şifre alanını doldurunuz!");
+                return;
+            }
+
+            // username ve passwordü aynı anda yollama
+            fetch('/api/login/' + username, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'password': password
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    if (data === "Başarılı") {
+                        // şifre doğruysa veya yeni kayıt yapıldıysa içeri al
+                        sessionStorage.setItem('chatKullaniciAdi', username);
+                        window.location.href = '/chatrooms.html';
+                    } else {
+                        alert(data);
+                    }
+                })
+                .catch(err => {
+                    console.error("Kayıt hatası:", err);
+                    alert("Sunucuya bağlanırken bir hata oluştu. Lütfen tekrar deneyin!");
+                });
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') login();
+        }
+    </script>
+</body>
+
+</html>
