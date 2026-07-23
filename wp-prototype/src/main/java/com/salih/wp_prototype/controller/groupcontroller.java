@@ -16,16 +16,20 @@ import com.salih.wp_prototype.model.chatgroup;
 import com.salih.wp_prototype.model.groupkullanici;
 import com.salih.wp_prototype.repository.ChatGroupRepository;
 import com.salih.wp_prototype.repository.GroupUserRepository;
+import com.salih.wp_prototype.repository.DeletingChatRoomsRepository;
 
 @Controller
 public class groupcontroller {
 
     private final ChatGroupRepository chatGroupRepository;
     private final GroupUserRepository groupUserRepository;
+    private final DeletingChatRoomsRepository deletingChatRoomsRepository;
 
-    public groupcontroller(ChatGroupRepository chatGroupRepository, GroupUserRepository groupUserRepository) {
+    public groupcontroller(ChatGroupRepository chatGroupRepository, GroupUserRepository groupUserRepository,
+            DeletingChatRoomsRepository deletingChatRoomsRepository) {
         this.chatGroupRepository = chatGroupRepository;
         this.groupUserRepository = groupUserRepository;
+        this.deletingChatRoomsRepository = deletingChatRoomsRepository;
     }
 
     @PostMapping("/api/gruplar/olustur")
@@ -71,9 +75,17 @@ public class groupcontroller {
     public List<chatgroup> benimGruplarim(@PathVariable String kullaniciAdi) {
 
         List<groupkullanici> uyeOldugumKayitlar = groupUserRepository.findByUsername(kullaniciAdi);
+        List<String> gizlenenOdalar = deletingChatRoomsRepository.findGizlenenOdalarByKullanici(kullaniciAdi);
 
         List<chatgroup> gruplarim = new ArrayList<>();
         for (groupkullanici kayit : uyeOldugumKayitlar) {
+            String odaId = "GROUP_" + kayit.getGroupId();
+
+            // eğer bu oda silinenler listesindeyse frontende gönderme
+            if (gizlenenOdalar.contains(odaId)) {
+                continue;
+            }
+
             chatGroupRepository.findById(kayit.getGroupId()).ifPresent(gruplarim::add);
         }
 

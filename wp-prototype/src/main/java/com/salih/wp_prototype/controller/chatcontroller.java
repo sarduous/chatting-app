@@ -16,10 +16,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.salih.wp_prototype.model.chatmodel;
+import com.salih.wp_prototype.model.deletingchatrooms;
 import com.salih.wp_prototype.model.kullanici;
+import com.salih.wp_prototype.repository.ChatGroupRepository;
 import com.salih.wp_prototype.repository.ChatRepository;
 import com.salih.wp_prototype.repository.UserRepository;
 import com.salih.wp_prototype.password.encryption;
+import com.salih.wp_prototype.repository.DeletingChatRoomsRepository;
+import com.salih.wp_prototype.repository.GroupUserRepository;
 
 @Controller
 public class chatcontroller {
@@ -27,12 +31,19 @@ public class chatcontroller {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
+    private final DeletingChatRoomsRepository deletingChatRoomsRepository;
+    private final GroupUserRepository groupUserRepository;
+    private final ChatGroupRepository chatGroupRepository;
 
     public chatcontroller(SimpMessagingTemplate messagingTemplate, ChatRepository chatRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository, DeletingChatRoomsRepository deletingChatRoomsRepository,
+            GroupUserRepository groupUserRepository, ChatGroupRepository chatGroupRepository) {
         this.messagingTemplate = messagingTemplate;
         this.chatRepository = chatRepository;
         this.userRepository = userRepository;
+        this.deletingChatRoomsRepository = deletingChatRoomsRepository;
+        this.groupUserRepository = groupUserRepository;
+        this.chatGroupRepository = chatGroupRepository;
     }
 
     @MessageMapping("/chat")
@@ -98,8 +109,13 @@ public class chatcontroller {
             // odayı bul x_x
             List<String> odalar = chatRepository.findIkiliSohbetOdalarim(kullaniciAdi);
             List<String> sohbetEdilenKisiler = new ArrayList<>();
+            List<String> gizlenenOdalar = deletingChatRoomsRepository.findGizlenenOdalarByKullanici(kullaniciAdi);
 
             for (String oda : odalar) {
+
+                if (gizlenenOdalar.contains(oda)) {
+                    continue;
+                }
                 // kendi ismimizi ve alt çizgiyi sil, geriye sadece karşı taraf kalsın
                 String karsiTaraf = oda.replace(kullaniciAdi, "").replace("_", "");
                 sohbetEdilenKisiler.add(karsiTaraf);
@@ -108,6 +124,59 @@ public class chatcontroller {
             return ResponseEntity.ok(sohbetEdilenKisiler);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
+        }
+    }
+
+    @PostMapping("/api/sohbet/sil")
+    public ResponseEntity<String> sohbetiSil(@RequestParam String kullaniciAdi, @RequestParam String chatRoomId) {
+        try {
+            // soft delete
+            if (!deletingChatRoomsRepository.existsByUsernameAndChatRoomId(kullaniciAdi, chatRoomId)) {
+                deletingchatrooms yeniKayit = new deletingchatrooms(kullaniciAdi, chatRoomId);
+                deletingChatRoomsRepository.save(yeniKayit);
+            }
+
+            // karşılıklı sohbet için hard delete kontrolü
+            if (!chatRoomId.startsWith("GROUP_")) {
+                long silenKisiSayisi = deletingChatRoomsRepository.countByChatRoomId(chatRoomId);
+                if (silenKisiSayisi == 2) {
+                    chatRepository.deleteByChatRoomId(chatRoomId);
+                    deletingChatRoomsRepository.deleteByChatRoomId(chatRoomId);
+
+                    System.out.println(
+                            chatRoomId + " odası ve içindeki tüm veriler veritabanından KALICI OLARAK silindi!");
+                }
+            } else {
+
+                Long groupId = Long.parseLong(chatRoomId.replace("GROUP_", ""));
+
+                // grupta kaç kişi olduğunu GroupUserRepositoryden sayısını çekiyoruz
+                long toplamUyeSayisi = groupUserRepository.findByGroupId(groupId).size();
+
+                // bu grubu kendineden silenlerin sayısını buluyoruz
+                long silenKisiSayisi = deletingChatRoomsRepository.countByChatRoomId(chatRoomId);
+
+                // gruptaki herkes (toplam üye sayısı == silen kişi sayısı) sildiyse
+                if (toplamUyeSayisi > 0 && silenKisiSayisi == toplamUyeSayisi) {
+
+                    // gruba ait tüm mesajlar ve logları sil
+                    chatRepository.deleteByChatRoomId(chatRoomId);
+                    // silinen sohbetler tablosundan silme
+                    deletingChatRoomsRepository.deleteByChatRoomId(chatRoomId);
+                    groupUserRepository.deleteByGroupId(groupId);
+                    chatGroupRepository.deleteById(groupId);
+
+                    System.out
+                            .println(chatRoomId + " grubunun mesajları tüm üyeler sildiği için kalıcı olarak silindi!");
+                }
+
+            }
+
+            return ResponseEntity.ok("Başarılı");
+        } catch (
+
+        Exception e) {
+            return ResponseEntity.internalServerError().body("Hata");
         }
     }
 }

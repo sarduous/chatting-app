@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>WhatsUp</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
@@ -431,23 +432,38 @@
                 const li = document.createElement('li');
                 const basHarf = oge.isim.charAt(0).toUpperCase();
 
-                if (oge.tip === 'kisi' || oge.tip === 'ikili') {
-                    li.onclick = () => kisiyeGit(oge.isim);
-                    li.innerHTML = `
+                if (oge.tip === 'ikili') {
+                    const isimler = [myGlobalName, oge.isim].sort();
+                    const odaId = isimler[0] + "_" + isimler[1];
+
+                    li.innerHTML = `<div style="display:flex; flex:1; align-items:center;" onclick="kisiyeGit('${oge.isim}')">
                         <div class="avatar">${basHarf}</div>
                         <div class="user-info">
                             <h3>${oge.isim}</h3>
                         </div>
-                    `;
-                } else if (oge.tip === 'grup') {
-                    li.onclick = () => grubaGit(oge.id, oge.isim);//kişi yerine gruba tıkladığımda çalışan yer
-                    li.innerHTML = `
+                    </div>
+                    <i class="fa-solid fa-circle-xmark" style="color: #ff5858; font-size: 1.4rem; cursor: pointer; padding-left: 15px; transition: transform 0.2s;" onclick="sohbetiSil(event, '${odaId}')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Sohbeti Sil"></i>`;
+                }
+                else if (oge.tip === 'kisi') {
+                    li.innerHTML = `<div style="display:flex; flex:1; align-items:center;" onclick="kisiyeGit('${oge.isim}')">
+                        <div class="avatar">${basHarf}</div>
+                        <div class="user-info">
+                            <h3>${oge.isim}</h3>
+                        </div>
+                    </div>`;
+                }
+                else if (oge.tip === 'grup') {
+                    const odaId = "GROUP_" + oge.id;
+
+                    li.innerHTML = `<div style="display:flex; flex:1; align-items:center;" onclick="grubaGit(${oge.id}, '${oge.isim}')">
                         <div class="avatar group">${basHarf}</div>
                         <div class="user-info">
                             <h3>${oge.isim} <span class="badge">Grup</span></h3>
                         </div>
-                    `;
+                    </div>
+                    <i class="fa-solid fa-circle-xmark" style="color: #ff5858; font-size: 1.4rem; cursor: pointer; padding-left: 15px; transition: transform 0.2s;" onclick="sohbetiSil(event, '${odaId}')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Grubu Sil"></i>`;
                 }
+
                 listeDOM.appendChild(li);
             });
         }
@@ -520,6 +536,32 @@
                     console.error("Hata:", err);
                     alert("Grup kurulurken bir hata oluştu.");
                 });
+        }
+
+        function sohbetiSil(event, roomId) {
+            // çarpıya tıkladığımda sohbete girmesini engelliyor
+            event.stopPropagation();
+
+            if (!confirm("Bu sohbeti silmek istediğinize emin misiniz?")) return;
+
+            // apiye yollayacağımız veriler
+            const formData = new URLSearchParams();
+            formData.append('kullaniciAdi', myGlobalName);
+            formData.append('chatRoomId', roomId);
+
+            fetch('/api/sohbet/sil', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            })
+                .then(res => {
+                    if (res.ok) {
+                        verileriGetir();
+                    } else {
+                        alert("Sohbet silinirken bir hata oluştu.");
+                    }
+                })
+                .catch(err => console.error("Silme hatası:", err));
         }
     </script>
 </body>
