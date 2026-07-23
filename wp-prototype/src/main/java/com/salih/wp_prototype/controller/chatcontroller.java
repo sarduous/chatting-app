@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Map;
@@ -203,5 +204,21 @@ public class chatcontroller {
     @ResponseBody
     public boolean durumSorgula(@PathVariable String kullaniciAdi) {
         return onlineUsers.containsKey(kullaniciAdi);
+    }
+
+    // websocketten gelen mesajı sil'i dinler
+    @MessageMapping("/chat.delete")
+    public void mesajSilSinyali(@Payload Map<String, String> payload) {
+        Long mesajId = Long.parseLong(payload.get("mesajId"));
+        String chatRoomId = payload.get("chatRoomId");
+        // hard delete
+        chatRepository.deleteById(mesajId);
+
+        // odadaki herkesten mesajı silme
+        Map<String, Object> bildirim = new HashMap<>();
+        bildirim.put("tip", "SİL");
+        bildirim.put("silinecekId", mesajId);
+
+        messagingTemplate.convertAndSend("/topic/chatroom/" + chatRoomId, (Object) bildirim);
     }
 }

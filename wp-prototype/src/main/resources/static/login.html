@@ -49,13 +49,31 @@
             border-radius: 6px;
         }
 
+        h2 {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
         button {
-            padding: 10px 20px;
-            background-color: #764ba2;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #8e2de2, #f857a6);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(142, 45, 226, 0.3);
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(142, 45, 226, 0.4);
         }
     </style>
 </head>
