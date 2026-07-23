@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.salih.wp_prototype.model.chatmodel;
 import com.salih.wp_prototype.model.deletingchatrooms;
@@ -34,6 +36,7 @@ public class chatcontroller {
     private final DeletingChatRoomsRepository deletingChatRoomsRepository;
     private final GroupUserRepository groupUserRepository;
     private final ChatGroupRepository chatGroupRepository;
+    private final ConcurrentHashMap<String, Boolean> onlineUsers = new ConcurrentHashMap<>();
 
     public chatcontroller(SimpMessagingTemplate messagingTemplate, ChatRepository chatRepository,
             UserRepository userRepository, DeletingChatRoomsRepository deletingChatRoomsRepository,
@@ -178,5 +181,27 @@ public class chatcontroller {
         Exception e) {
             return ResponseEntity.internalServerError().body("Hata");
         }
+    }
+
+    // websocket üzerinden gelen online/offline durumunu alır
+    @MessageMapping("/durum")
+    public void durumGuncelle(@Payload Map<String, String> payload) {
+        String kullanici = payload.get("kullaniciAdi");
+        String durum = payload.get("durum");
+
+        if ("ONLINE".equals(durum)) {
+            onlineUsers.put(kullanici, true);
+        } else {
+            onlineUsers.remove(kullanici);
+        }
+
+        messagingTemplate.convertAndSend("/topic/durum", payload);
+    }
+
+    // biri ilk girdiğinde karşı tarafın o anlık durumunu öğrenmesi için
+    @GetMapping("/api/durum/{kullaniciAdi}")
+    @ResponseBody
+    public boolean durumSorgula(@PathVariable String kullaniciAdi) {
+        return onlineUsers.containsKey(kullaniciAdi);
     }
 }
