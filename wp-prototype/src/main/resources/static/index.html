@@ -230,17 +230,6 @@
             transform: translateY(1px);
         }
 
-
-        .typing-container {
-            display: none;
-            /* başlangıçta gizli */
-            flex-direction: column;
-            align-self: flex-start;
-            /* sola yasla */
-            margin-bottom: 15px;
-            animation: fadeIn 0.3s ease;
-        }
-
         .typing-bubble {
             background: #4a148c;
             padding: 12px 18px;
@@ -252,6 +241,52 @@
             width: fit-content;
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
             opacity: 0.7;
+        }
+
+        .typing-container {
+            display: none;
+            flex-direction: row;
+            align-items: center;
+            align-self: flex-start;
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .typing-avatars {
+            display: flex;
+            align-items: center;
+            margin-right: 8px;
+        }
+
+        .typing-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8e2de2, #f857a6);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid #f8f9fa;
+            margin-left: -10px;
+            /* avatarlar üst üste biniyor */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .typing-avatar:first-child {
+            margin-left: 0;
+            z-index: 3;
+        }
+
+        .typing-avatar:nth-child(2) {
+            z-index: 2;
+        }
+
+        .typing-avatar:nth-child(3) {
+            z-index: 1;
         }
 
         /* 3 nokta animasyonu */
@@ -394,12 +429,13 @@
         <div class="messages" id="message-list">
 
             <div id="typing" class="typing-container">
+                <div id="typing-avatars-box" class="typing-avatars"></div>
                 <div class="typing-bubble">
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                 </div>
-                <div class="typing-text" id="typing-username-text">Kullanıcı yazıyor...</div>
+                <div class="typing-text" id="typing-username-text">yazıyor...</div>
             </div>
         </div>
 
@@ -428,18 +464,15 @@
         </div>
     </div>
 
-    <!-- Kullanıcı Ekleme Modalı (Görseldeki Tasarım) -->
+    <!-- kullanıcı ekleme modalı -->
     <div id="kullaniciEkleModal" class="modal">
         <div class="modal-content" style="width: 320px; padding: 25px; border-radius: 12px; text-align: left;">
             <h3 style="margin-bottom: 15px; color: #444; font-size: 1.1rem; text-align: left;">Kişileri Seç:</h3>
-
-            <!-- Kaydırılabilir Checkbox Listesi -->
             <div id="eklenecek-kullanicilar-listesi"
                 style="max-height: 180px; overflow-y: auto; border: 1px solid #e1e1e1; border-radius: 8px; padding: 10px; background: #fafafa; margin-bottom: 20px;">
                 <div style="text-align:center; color:#888;">Yükleniyor...</div>
             </div>
 
-            <!-- Alt Butonlar -->
             <div style="display: flex; gap: 10px;">
                 <button class="btn-ekle" onclick="secilenleriGrubaEkle()"
                     style="flex: 1; justify-content: center; padding: 12px; border-radius: 8px;">Ekle</button>
@@ -464,6 +497,8 @@
             brokerURL: 'ws://' + window.location.host + '/ws-chat'
         });
 
+        const aktifYazanlar = new Set();
+
         stompClient.onConnect = (frame) => {
             stompClient.subscribe('/topic/chatroom/' + myRoomName, (mesajPaketi) => {
                 const gelenMesaj = JSON.parse(mesajPaketi.body);
@@ -472,24 +507,26 @@
 
             stompClient.subscribe('/topic/typing/' + myRoomName, (paket) => {
                 const data = JSON.parse(paket.body);
-                const indicator = document.getElementById('typing');
-                const usernameText = document.getElementById('typing-username-text');//"kullanıcı yazıyor..." yazan metini buluyor
-                const mesajListesi = document.getElementById('message-list');
 
-                //sadece karşı taraf tuşlara bastığında devreye girer
                 if (data.user_sender !== myGlobalName) {
+                    let degisiklikOlduMu = false;
+
                     if (data.isTyping === "true" || data.isTyping === true) {
-                        if (usernameText) {//klavyede yazıyorsa
-                            usernameText.innerText = data.user_sender + " yazıyor...";
-                        }
-                        if (indicator.style.display !== 'flex') {
-                            indicator.style.display = 'flex';
-                            mesajListesi.appendChild(indicator);
-                            mesajListesi.scrollTop = mesajListesi.scrollHeight;
+                        // eğer bu kişi listemizde yoksa ekle ve ekranı yenile
+                        if (!aktifYazanlar.has(data.user_sender)) {
+                            aktifYazanlar.add(data.user_sender);
+                            degisiklikOlduMu = true;
                         }
                     } else {
-                        // yazmıyorsa yazıyı gizle
-                        indicator.style.display = 'none';
+                        // eğer kişi yazmayı bıraktıysa ve listemizde varsa sil ve ekranı yenile
+                        if (aktifYazanlar.has(data.user_sender)) {
+                            aktifYazanlar.delete(data.user_sender);
+                            degisiklikOlduMu = true;
+                        }
+                    }
+
+                    if (degisiklikOlduMu) {
+                        yaziyorArayuzunuGuncelle();
                     }
                 }
             });
@@ -570,15 +607,19 @@
         }
 
         window.onload = tummesajlar; let typingTimer;
-        const typingInterval = 2000; // 2 saniye yazmazsa yazmayı bıraktı
+        const typingInterval = 3000; // 3 saniye yazmazsa yazmayı bıraktı
+        let suAnYaziyorum = false;
 
         //klavyeye her basıldığında çalışır
         function klavyetiklama() {
-            // sunucuya "şu an yazıyorum" sinyali fırlatır
-            stompClient.publish({
-                destination: '/app/typing',
-                body: JSON.stringify({ user_sender: myGlobalName, chatRoomId: myRoomName, isTyping: true })
-            });
+            if (!suAnYaziyorum) {
+                // sunucuya "şu an yazıyorum" sinyali fırlatır
+                stompClient.publish({
+                    destination: '/app/typing',
+                    body: JSON.stringify({ user_sender: myGlobalName, chatRoomId: myRoomName, isTyping: true })
+                });
+                suAnYaziyorum = true;
+            }
 
             //eski sayacı iptal et ve 2 saniyeden geriye saymaya başlar
             clearTimeout(typingTimer);
@@ -588,6 +629,7 @@
                     destination: '/app/typing',
                     body: JSON.stringify({ user_sender: myGlobalName, chatRoomId: myRoomName, isTyping: false })
                 });
+                suAnYaziyorum = false; // 2 saniye bitti, kilidi aç
             }, typingInterval);
         }
 
@@ -597,7 +639,7 @@
         if (myRoomName && myRoomName.startsWith("GROUP_")) {
 
             baslikMetni.innerHTML = karsiTaraf + ' <i class="fa-solid fa-users" style="font-size: 1.1rem; margin-left: 8px; opacity: 0.9;"></i>';
-            baslikMetni.style.cursor = 'pointer';//fareyle üzerine gelince el işareti
+            baslikMetni.style.cursor = 'pointer';// fareyle üzerine gelince el işareti
             baslikMetni.title = 'Grup üyelerini görmek için tıklayın';// imleç üzerinde durunca çıkacak yazı
             baslikMetni.onmouseover = function () { this.style.opacity = '0.7'; };
             baslikMetni.onmouseout = function () { this.style.opacity = '1'; };
@@ -794,6 +836,39 @@
                         }
                     });
             });
+        }
+
+        function yaziyorArayuzunuGuncelle() {
+            const indicator = document.getElementById('typing');
+            const avatarsBox = document.getElementById('typing-avatars-box');
+            const mesajListesi = document.getElementById('message-list');
+
+            // yazan kalmadıysa balonu temizle
+            if (aktifYazanlar.size === 0) {
+                indicator.style.display = 'none';
+                return;
+            }
+
+            indicator.style.display = 'flex';
+            avatarsBox.innerHTML = '';
+
+            // set içindeki isimleri arraye çevirip 3 kişiyle sınırlama
+            const yazanListesi = Array.from(aktifYazanlar).slice(0, 3);
+
+            yazanListesi.forEach(kisi => {
+                const basHarf = kisi.charAt(0).toUpperCase();
+
+                const avatar = document.createElement('div');
+                avatar.className = 'typing-avatar';
+                avatar.textContent = basHarf;
+                avatar.title = kisi + " yazıyor...";
+
+                avatarsBox.appendChild(avatar);
+            });
+
+            // animasyonu alta taşı
+            mesajListesi.appendChild(indicator);
+            mesajListesi.scrollTop = mesajListesi.scrollHeight;
         }
     </script>
 </body>
