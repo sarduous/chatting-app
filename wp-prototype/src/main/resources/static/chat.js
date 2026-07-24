@@ -1,4 +1,4 @@
-let seciliMesajId = null; // Menü için gerekli ID tanımı eklendi
+let seciliMesajId = null; // menü için gerekli id tanımı
 
 const myGlobalName = sessionStorage.getItem('chatKullaniciAdi');
 const myRoomName = sessionStorage.getItem('chatOdasi');
@@ -234,10 +234,16 @@ function kullanicilariGoster() {
                 kullanicilar.forEach(uye => {
                     const basHarf = uye.charAt(0).toUpperCase();
                     const benMiyim = (uye === myGlobalName);
+                    // sadece karşı taraf tıklanabilsin diye ayarlar
+                    const tiklanabilirlik = benMiyim ? '' : 'cursor: pointer; transition: opacity 0.2s;';
+                    const hoverEfekti = benMiyim ? '' : `onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'"`;
+                    const tiklamaOlayi = benMiyim ? '' : `onclick="ozelSohbeteGit('${uye}')"`;
+                    const baslikYazisi = benMiyim ? '' : `title="${uye} ile özel sohbete başla"`;
                     const carpiIkonu = benMiyim ? '' : `<i class="fa-solid fa-circle-xmark" style="color: #ff5858; cursor: pointer; font-size: 1.3rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="kullaniciCikar('${grupId}', '${uye}')" title="Kullanıcıyı Gruptan Çıkar"></i>`;
                     kullanicilarHTML += `
 <div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 8px; margin-bottom: 8px;">
-<div style="display: flex; align-items: center; gap: 15px;">
+<!-- SOL KISIM: Profil ve İsim (Artık Buton Gibi Çalışıyor) -->
+        <div ${tiklamaOlayi} ${hoverEfekti} ${baslikYazisi} style="display: flex; align-items: center; gap: 15px; ${tiklanabilirlik}">
     <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #8e2de2, #f857a6); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1rem; box-shadow: 0 2px 5px rgba(142, 45, 226, 0.3);">
         ${basHarf}
     </div> 
@@ -445,6 +451,17 @@ function arayuzDurumGuncelle(isOnline) {
         statusLabel.style.color = '#ddd';
         statusIcon.style.color = '#ddd';
     }
+}
+
+// grup üyelerine bakarken ikili sohbete gitme
+function ozelSohbeteGit(hedefKullanici) {
+    uyelerModalKapat();
+    const odaId = [myGlobalName, hedefKullanici].sort().join('_');
+    // sessionstorage ile eski sohbeti getirme
+    sessionStorage.setItem('chatOdasi', odaId);
+    sessionStorage.setItem('konusulanKisi', hedefKullanici);
+    // sayfayı anında yenileyerek ikili sohbet başlatma
+    window.location.reload();
 }
 
 // sayfadan çıkarken offline sinyali gönderir
